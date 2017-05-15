@@ -1,0 +1,5 @@
+name: Path item extra
+core: 8.x
+type: module
+depedencies:
+  - path
