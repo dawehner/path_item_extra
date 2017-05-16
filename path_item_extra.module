@@ -50,5 +50,7 @@ function _path_item_extra_path_save(array $path) {
       $entity->get('path')->alias = $path['alias'];
       $entity->get('path')->pid = $path['pid'];
     }
+
+    $entity->save();
   }
 }
