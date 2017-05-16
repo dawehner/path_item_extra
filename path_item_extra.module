@@ -1,0 +1,54 @@
+<?php
+
+use Drupal\Core\Entity\FieldableEntityInterface;
+use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\TypedData\TranslatableInterface;
+use Drupal\path_item_extra\Plugin\Field\FieldType\PathItemExtra;
+use Symfony\Cmf\Component\Routing\RouteObjectInterface;
+
+/**
+ * Implements hook_field_info_alter().
+ */
+function path_item_extra_field_info_alter(&$info) {
+  // Change the default widget for fields of type 'foo'.
+  if (isset($info['path'])) {
+    $info['path']['class'] = PathItemExtra::class;
+  }
+}
+
+/**
+ * Implements hook_path_insert().
+ */
+function path_item_extra_path_insert(array $path) {
+  _path_item_extra_path_save($path);
+}
+
+/**
+ * Implements hook_path_update().
+ */
+function path_item_extra_path_insert(array $path) {
+  _path_item_extra_path_save($path);
+}
+
+function _path_item_extra_path_save(array $path) {
+  /** @var \Drupal\Core\Routing\Router $router */
+  $router = \Drupal::service('router');
+
+  $result = $router->match($path['source']);
+  if (!empty($result[RouteObjectInterface::ROUTE_NAME]) && preg_match('/entity.([a-z_0-9]+).canonical/', $result[RouteObjectInterface::ROUTE_NAME], $match)) {
+    $entity_type_id = $match[1];
+    $entity = $result[$entity_type_id];
+
+    if (!$entity instanceof FieldableEntityInterface) {
+      return;
+    }
+    if ($entity instanceof TranslatableInterface && !empty($path['langcode']) && !in_array($path, [LanguageInterface::LANGCODE_NOT_SPECIFIED, LanguageInterface::LANGCODE_DEFAULT], TRUE)) { 
+      $entity = $entity->getTranslation($path['langcode']);
+    }
+
+    if ($entity->hasField('path')) {
+      $entity->get('path')->alias = $path['alias'];
+      $entity->get('path')->pid = $path['pid'];
+    }
+  }
+}
